@@ -1,9 +1,9 @@
 // ── CHANGE ALL THIS TO YOUR LAB'S REAL DATA ──
 
 export const labInfo = {
-  name: "XYZ Lab",                           // ← your lab name
-  fullName: "XYZ Research Laboratory",
-  university: "Your University Name",        // ← your university
+  name: "Debarata Lab",
+  fullName: "Debarata Research Laboratory",
+  university: "Amity University",
   department: "Department of Chemistry",
   tagline: "Supramolecular & Biomolecular Chemistry",
   description:

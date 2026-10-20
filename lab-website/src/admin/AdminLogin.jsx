@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { labInfo } from '../data/labData'
+import { useLabData } from '../context/LabDataContext'
 
 export default function AdminLogin() {
+  const { labInfo } = useLabData()
   const [creds, setCreds] = useState({ username: 'admin', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -50,7 +51,7 @@ export default function AdminLogin() {
       }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--navy)', marginBottom: '0.25rem' }}>
-            {labInfo.name}
+            {labInfo?.name || 'Debarata Lab'}
           </div>
           <div style={{ fontSize: '0.82rem', color: 'var(--gray-500)' }}>Admin Dashboard</div>
         </div>
