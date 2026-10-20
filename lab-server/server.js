@@ -5,11 +5,37 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const nodemailer = require('nodemailer')
 const admin = require('firebase-admin')
-const serviceAccount = require('./serviceAccountKey.json')
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-})
+let serviceAccount = null
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+        serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === 'string'
+            ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+            : process.env.FIREBASE_SERVICE_ACCOUNT
+    } catch (e) {
+        console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT env var:', e.message)
+    }
+}
+
+if (!serviceAccount) {
+    try {
+        serviceAccount = require('./serviceAccountKey.json')
+    } catch {
+        console.warn('⚠️ No local serviceAccountKey.json found.')
+    }
+}
+
+if (serviceAccount) {
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    })
+} else {
+    try {
+        admin.initializeApp()
+    } catch (err) {
+        console.error('Firebase init fallback error:', err.message)
+    }
+}
 
 const db = admin.firestore()
 const app = express()
