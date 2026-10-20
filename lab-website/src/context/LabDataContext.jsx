@@ -145,6 +145,33 @@ export function LabDataProvider({ children }) {
     refreshData()
   }, [refreshData])
 
+  // Dynamically sync favicon and document title to the browser tab
+  useEffect(() => {
+    const faviconUrl = labInfo?.favicon || '/fav.png'
+    let link = document.querySelector("link[rel~='icon']")
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.type = 'image/png'
+    link.href = faviconUrl
+
+    let appleLink = document.querySelector("link[rel='apple-touch-icon']")
+    if (!appleLink) {
+      appleLink = document.createElement('link')
+      appleLink.rel = 'apple-touch-icon'
+      document.head.appendChild(appleLink)
+    }
+    appleLink.href = faviconUrl
+  }, [labInfo?.favicon])
+
+  useEffect(() => {
+    if (labInfo?.name) {
+      document.title = `${labInfo.name} | ${labInfo.university || 'Amity University'}`
+    }
+  }, [labInfo?.name, labInfo?.university])
+
   // Publications CRUD
   const addPublication = async (pubData) => {
     try {

@@ -4,6 +4,7 @@ export const labInfo = {
   name: "Debarata Lab",
   fullName: "Debarata Research Laboratory",
   university: "Amity University",
+  favicon: "/fav.png",
   department: "Department of Chemistry",
   tagline: "Supramolecular & Biomolecular Chemistry",
   description:

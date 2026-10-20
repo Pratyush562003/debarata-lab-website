@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useLabData } from '../context/LabDataContext'
+import { useConfirm } from '../context/ConfirmModalContext'
 
 const inputStyle = { 
   width: '100%', 
@@ -37,7 +38,8 @@ const sectionBox = {
 
 export default function SettingsManager() {
   const { changePassword } = useAuth()
-  const { piInfo, updateProfile, labInfo, updateContact, dbConnected } = useLabData()
+  const { piInfo, updateProfile, labInfo, updateContact, updateAbout, dbConnected } = useLabData()
+  const confirm = useConfirm()
 
   // Profile State (Left Column)
   const [profileName, setProfileName] = useState('')
@@ -45,6 +47,11 @@ export default function SettingsManager() {
   const [profileTitle, setProfileTitle] = useState('')
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [profileStatus, setProfileStatus] = useState(null)
+
+  // Favicon State (Left Column)
+  const [favIcon, setFavIcon] = useState('/fav.png')
+  const [isSavingFav, setIsSavingFav] = useState(false)
+  const [favStatus, setFavStatus] = useState(null)
 
   // Password State (Left Column)
   const [passwords, setPasswords] = useState({ current: '', new: '', confirm: '' })
@@ -60,6 +67,13 @@ export default function SettingsManager() {
   })
   const [isSavingContact, setIsSavingContact] = useState(false)
   const [contactStatus, setContactStatus] = useState(null)
+
+  // Load Favicon from Context
+  useEffect(() => {
+    if (labInfo) {
+      setFavIcon(labInfo.favicon || '/fav.png')
+    }
+  }, [labInfo])
 
   // Load Profile from Context
   useEffect(() => {
@@ -185,6 +199,99 @@ export default function SettingsManager() {
       })
     } finally {
       setIsSavingContact(false)
+    }
+  }
+
+  // Handle Favicon File Upload with Canvas Optimization
+  const handleFaviconUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const img = new Image()
+      img.onload = () => {
+        const targetDim = 128
+        const canvas = document.createElement('canvas')
+        canvas.width = targetDim
+        canvas.height = targetDim
+        const ctx = canvas.getContext('2d')
+        ctx.clearRect(0, 0, targetDim, targetDim)
+        ctx.drawImage(img, 0, 0, targetDim, targetDim)
+
+        const optimizedDataUrl = canvas.toDataURL('image/png')
+        setFavIcon(optimizedDataUrl)
+        setFavStatus({
+          type: 'info',
+          message: '✨ New favicon chosen. Click "Save Favicon" below to apply it across the website.'
+        })
+      }
+      img.src = event.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Save Favicon
+  const handleSaveFavicon = async () => {
+    setIsSavingFav(true)
+    setFavStatus(null)
+    try {
+      if (updateAbout) {
+        await updateAbout({
+          ...labInfo,
+          favicon: favIcon
+        })
+      }
+      setFavStatus({
+        type: 'success',
+        message: '✅ Favicon saved and updated in the browser tab!'
+      })
+      setTimeout(() => setFavStatus(null), 5000)
+    } catch (err) {
+      console.error('Error saving favicon:', err)
+      setFavStatus({
+        type: 'error',
+        message: `⚠️ Saved locally, but database sync error: ${err.message}`
+      })
+    } finally {
+      setIsSavingFav(false)
+    }
+  }
+
+  // Delete / Reset Favicon
+  const handleDeleteFavicon = async () => {
+    const ok = await confirm({
+      title: 'Reset Favicon to Default?',
+      message: 'Do you want to delete the custom favicon and restore the default lab favicon (/fav.png)?',
+      confirmText: 'Yes, Reset',
+      cancelText: 'No',
+      danger: true
+    })
+    if (!ok) return
+
+    setIsSavingFav(true)
+    setFavStatus(null)
+    try {
+      setFavIcon('/fav.png')
+      if (updateAbout) {
+        await updateAbout({
+          ...labInfo,
+          favicon: '/fav.png'
+        })
+      }
+      setFavStatus({
+        type: 'success',
+        message: '✅ Favicon reset to default (/fav.png).'
+      })
+      setTimeout(() => setFavStatus(null), 5000)
+    } catch (err) {
+      console.error('Error resetting favicon:', err)
+      setFavStatus({
+        type: 'error',
+        message: `⚠️ Error resetting favicon: ${err.message}`
+      })
+    } finally {
+      setIsSavingFav(false)
     }
   }
 
@@ -407,6 +514,168 @@ export default function SettingsManager() {
                 {isSavingProfile ? 'Saving...' : 'Save Profile'}
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Favicon Card */}
+        <div style={sectionBox}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div>
+              <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--navy)', fontSize: '1.2rem', marginBottom: '0.2rem' }}>
+                Website Favicon (Browser Tab Icon)
+              </h3>
+              <p style={{ fontSize: '0.83rem', color: 'var(--gray-500)', margin: 0 }}>
+                Icon displayed on visitor browser tabs and bookmarks.
+              </p>
+            </div>
+            <span style={{ 
+              fontSize: '0.72rem', 
+              padding: '0.25rem 0.6rem', 
+              borderRadius: '20px', 
+              background: favIcon === '/fav.png' ? '#f1f5f9' : '#dbeafe',
+              color: favIcon === '/fav.png' ? 'var(--gray-600)' : '#1e40af',
+              fontWeight: 600
+            }}>
+              {favIcon === '/fav.png' ? 'Default /fav.png' : 'Custom Favicon'}
+            </span>
+          </div>
+
+          {favStatus && (
+            <div style={{ 
+              marginBottom: '1.25rem', 
+              padding: '0.75rem 1rem', 
+              borderRadius: '7px', 
+              fontSize: '0.86rem',
+              background: favStatus.type === 'success' ? '#dcfce7' : favStatus.type === 'info' ? '#e0f2fe' : '#fee2e2',
+              color: favStatus.type === 'success' ? '#166534' : favStatus.type === 'info' ? '#0369a1' : '#b91c1c'
+            }}>
+              {favStatus.message}
+            </div>
+          )}
+
+          {/* Browser Tab Simulation Preview */}
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '8px 8px 0 0',
+            padding: '0.65rem 0.85rem 0',
+            marginBottom: '1.25rem',
+          }}>
+            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '0.4rem', fontWeight: 600 }}>
+              ✦ BROWSER TAB PREVIEW
+            </div>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.55rem',
+              background: '#0f172a',
+              borderRadius: '8px 8px 0 0',
+              padding: '0.45rem 0.85rem',
+              maxWidth: '280px',
+              color: '#f8fafc',
+              fontSize: '0.82rem',
+              borderTop: '2px solid var(--gold-light)'
+            }}>
+              <img
+                src={favIcon}
+                alt="Favicon preview"
+                style={{ width: '18px', height: '18px', borderRadius: '3px', objectFit: 'contain' }}
+                onError={(e) => { e.target.src = '/fav.png' }}
+              />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                {labInfo?.name || 'Debarata Lab'} | {labInfo?.university || 'Amity University'}
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', cursor: 'default' }}>✕</span>
+            </div>
+          </div>
+
+          {/* Favicon Actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.25rem' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '12px',
+              border: '2px solid var(--gray-200)',
+              backgroundColor: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              flexShrink: 0
+            }}>
+              <img
+                src={favIcon}
+                alt="Favicon"
+                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                onError={(e) => { e.target.src = '/fav.png' }}
+              />
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                <label style={{
+                  padding: '0.48rem 0.95rem',
+                  borderRadius: '6px',
+                  border: '1px solid var(--gray-300)',
+                  backgroundColor: '#ffffff',
+                  color: 'var(--navy)',
+                  fontSize: '0.84rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  transition: 'all 0.15s'
+                }}>
+                  📁 Choose Favicon Image
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/svg+xml, image/x-icon, image/webp"
+                    onChange={handleFaviconUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+
+                {favIcon !== '/fav.png' && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteFavicon}
+                    disabled={isSavingFav}
+                    style={{
+                      padding: '0.48rem 0.85rem',
+                      borderRadius: '6px',
+                      border: '1px solid #fee2e2',
+                      backgroundColor: '#fff',
+                      color: '#dc2626',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    🗑️ Reset to Default
+                  </button>
+                )}
+              </div>
+              <span style={helperStyle}>
+                Supports PNG, ICO, SVG, or JPG. Recommended: 64×64 or 128×128 square image.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={handleSaveFavicon}
+              disabled={isSavingFav}
+              className="btn btn-primary"
+              style={{ fontSize: '0.86rem', padding: '0.55rem 1.25rem' }}
+            >
+              {isSavingFav ? 'Saving Favicon...' : 'Save Favicon'}
+            </button>
           </div>
         </div>
 
