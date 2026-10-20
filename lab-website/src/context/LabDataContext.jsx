@@ -105,19 +105,28 @@ export function LabDataProvider({ children }) {
         })
       }
 
-      if (contact && typeof contact === 'object' && Object.keys(contact).length > 0) {
+      if (aboutData && typeof aboutData === 'object' && Object.keys(aboutData).length > 0) {
         connected = true
+        // Strip contact fields so aboutData never overrides contact settings
+        const { email, alternateEmail, phone, alternatePhone, address, ...cleanAbout } = aboutData
         setLabInfoState(prev => {
-          const next = { ...prev, ...contact }
+          const next = { ...prev, ...cleanAbout }
           localStorage.setItem('lab_labInfo', JSON.stringify(next))
           return next
         })
       }
 
-      if (aboutData && typeof aboutData === 'object' && Object.keys(aboutData).length > 0) {
+      if (contact && typeof contact === 'object' && Object.keys(contact).length > 0) {
         connected = true
         setLabInfoState(prev => {
-          const next = { ...prev, ...aboutData }
+          const next = { 
+            ...prev, 
+            email: contact.email || '',
+            alternateEmail: contact.alternateEmail || '',
+            phone: contact.phone || '',
+            alternatePhone: contact.alternatePhone || '',
+            address: contact.address || ''
+          }
           localStorage.setItem('lab_labInfo', JSON.stringify(next))
           return next
         })
@@ -615,10 +624,11 @@ export function LabDataProvider({ children }) {
   // About update
   const updateAbout = async (aboutData) => {
     try {
-      const saved = await api.updateAbout(aboutData)
+      const { email, alternateEmail, phone, alternatePhone, address, ...cleanAbout } = aboutData || {}
+      const saved = await api.updateAbout(cleanAbout)
       if (saved) {
         setLabInfoState(prev => {
-          const next = { ...prev, ...saved }
+          const next = { ...prev, ...cleanAbout }
           localStorage.setItem('lab_labInfo', JSON.stringify(next))
           return next
         })
@@ -626,8 +636,9 @@ export function LabDataProvider({ children }) {
       }
     } catch (err) {
       console.error('Failed to update about info in Firebase:', err)
+      const { email, alternateEmail, phone, alternatePhone, address, ...cleanAbout } = aboutData || {}
       setLabInfoState(prev => {
-        const next = { ...prev, ...aboutData }
+        const next = { ...prev, ...cleanAbout }
         localStorage.setItem('lab_labInfo', JSON.stringify(next))
         return next
       })

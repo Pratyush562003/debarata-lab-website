@@ -336,8 +336,14 @@ app.get('/api/contact', async (req, res) => {
 
 app.put('/api/contact', authMiddleware, async (req, res) => {
     try {
-        const contactData = { ...req.body }
-        await db.collection('settings').doc('contact').set(contactData, { merge: true })
+        const contactData = {
+            email: (req.body.email || '').trim(),
+            alternateEmail: (req.body.alternateEmail || '').trim(),
+            phone: (req.body.phone || '').trim(),
+            alternatePhone: (req.body.alternatePhone || '').trim(),
+            address: (req.body.address || '').trim()
+        }
+        await db.collection('settings').doc('contact').set(contactData)
         console.log('✅ Contact info updated in Firestore')
         res.json(contactData)
     } catch (err) {
@@ -409,8 +415,13 @@ app.get('/api/about', async (req, res) => {
 app.put('/api/about', authMiddleware, async (req, res) => {
     try {
         const data = { ...req.body }
-        await db.collection('settings').doc('about').set(data, { merge: true })
-        console.log('✅ About info updated in Firestore')
+        delete data.email
+        delete data.alternateEmail
+        delete data.phone
+        delete data.alternatePhone
+        delete data.address
+        await db.collection('settings').doc('about').set(data)
+        console.log('✅ About info updated in Firestore (contact fields excluded)')
         res.json(data)
     } catch (err) {
         console.error('Error saving about info:', err)

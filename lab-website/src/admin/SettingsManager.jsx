@@ -237,8 +237,9 @@ export default function SettingsManager() {
     setFavStatus(null)
     try {
       if (updateAbout) {
+        const { email, alternateEmail, phone, alternatePhone, address, ...cleanLabInfo } = labInfo
         await updateAbout({
-          ...labInfo,
+          ...cleanLabInfo,
           favicon: favIcon
         })
       }
@@ -274,8 +275,9 @@ export default function SettingsManager() {
     try {
       setFavIcon('/fav.png')
       if (updateAbout) {
+        const { email, alternateEmail, phone, alternatePhone, address, ...cleanLabInfo } = labInfo
         await updateAbout({
-          ...labInfo,
+          ...cleanLabInfo,
           favicon: '/fav.png'
         })
       }

@@ -113,8 +113,9 @@ export default function AboutManager() {
   const handleSave = async () => {
     try {
       if (updateAbout) {
+        const { email, alternateEmail, phone, alternatePhone, address, ...cleanLabInfo } = labInfo
         await updateAbout({
-          ...labInfo,
+          ...cleanLabInfo,
           education: piInfo.education,
           awards: piInfo.awards
         })
@@ -148,12 +149,14 @@ export default function AboutManager() {
           <Field label="Lab Full Name" value={labInfo.fullName} onChange={e => setLab('fullName', e.target.value)} />
           <Field label="University" value={labInfo.university} onChange={e => setLab('university', e.target.value)} />
           <Field label="Department" value={labInfo.department} onChange={e => setLab('department', e.target.value)} />
-          <Field label="Tagline / Research Focus" value={labInfo.tagline} onChange={e => setLab('tagline', e.target.value)} />
-          <Field label="Email" value={labInfo.email} onChange={e => setLab('email', e.target.value)} />
-          <Field label="Phone" value={labInfo.phone} onChange={e => setLab('phone', e.target.value)} />
-          <Field label="Address" value={labInfo.address} onChange={e => setLab('address', e.target.value)} />
+          <div style={{ gridColumn: '1/-1' }}>
+            <Field label="Tagline / Research Focus" value={labInfo.tagline} onChange={e => setLab('tagline', e.target.value)} />
+          </div>
         </div>
         <Field label="Lab Description" value={labInfo.description} onChange={e => setLab('description', e.target.value)} multiline />
+        <div style={{ marginTop: '0.85rem', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid var(--gray-200)', fontSize: '0.82rem', color: 'var(--gray-600)' }}>
+          ℹ️ Lab Contact details (Primary &amp; Alternate Email, Phone, Address) are centrally configured in <a href="/admin/settings" style={{ color: 'var(--blue)', fontWeight: 600 }}>Settings &gt; Contact Details</a> to keep the Contact page and website footer in sync.
+        </div>
       </div>
 
       {/* PI Info */}
